@@ -18,7 +18,6 @@ class UserRepository(
 
     private var cachedUser: User? = null
 
-    // ✅ ДОБАВЛЯЕМ ЭТОТ МЕТОД (его не хватало)
     suspend fun fetchSettings(): Settings {
         return withContext(Dispatchers.IO) {
             api.fetchSettings()

@@ -2,6 +2,8 @@ package com.example.kotlinkoroutinesallcases
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +23,7 @@ fun MainScreen(
     val context = LocalContext.current
     var query by remember { mutableStateOf("") }
 
+    // Обработка событий (Toast)
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -37,6 +40,7 @@ fun MainScreen(
         }
     }
 
+    // Автозагрузка при старте
     LaunchedEffect(Unit) {
         viewModel.loadUserWithCancel()
     }
@@ -48,10 +52,16 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // ========== ПОЛЕ ПОИСКА (debounce) ==========
+            Text(
+                text = "🔍 Debounce (сценарий 5)",
+                style = MaterialTheme.typography.titleSmall
+            )
             TextField(
                 value = query,
                 onValueChange = {
@@ -62,29 +72,155 @@ fun MainScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // ========== ОСНОВНЫЕ СЦЕНАРИИ (кнопки) ==========
+            Text(
+                text = "🚀 Сценарии корутин",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            // 1️⃣ Сценарий 1: Фоновая работа (withContext)
+            Button(
+                onClick = { viewModel.loadUserWithCancel() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("1️⃣ Загрузить пользователя (withContext)")
+            }
+
+            // 2️⃣ Сценарий 3: Параллельный запуск (async)
+            Button(
+                onClick = { viewModel.loadParallel() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("3️⃣ Параллельные запросы (async/await)")
+            }
+
+            // 3️⃣ Сценарий 4: Отмена задачи (job.cancel)
+            Button(
+                onClick = { viewModel.cancelLoading() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("4️⃣ Отменить загрузку (job.cancel)")
+            }
+
+            // 4️⃣ Сценарий 5: Задержка (delay)
+            Button(
+                onClick = { viewModel.showTemporaryMessage() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("5️⃣ Задержка (delay + Toast)")
+            }
+
+            // 5️⃣ Сценарий 6: Обработка ошибок (try-catch)
+            Button(
+                onClick = { viewModel.riskyOperation() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("6️⃣ Ошибка (try-catch / CoroutineExceptionHandler)")
+            }
+
+            // 6️⃣ Сценарий 6.3: SupervisorJob
+            Button(
+                onClick = { viewModel.loadIndependentData() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("6️⃣ SupervisorJob (ошибка не убивает соседей)")
+            }
+
+            // 7️⃣ Сценарий 2: Реактивная подписка (collect)
+            Button(
+                onClick = { viewModel.forceContent() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("2️⃣ Показать Flow (collect из Room)")
+            }
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // ========== ОТОБРАЖЕНИЕ ТЕКУЩЕГО СОСТОЯНИЯ ==========
+            Text(
+                text = "📊 Текущее состояние:",
+                style = MaterialTheme.typography.titleSmall
+            )
+
             when (val state = uiState) {
                 is MainUiState.Loading -> {
-                    CircularProgressIndicator()
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Загрузка...")
+                        }
+                    }
                 }
+
                 is MainUiState.Success -> {
-                    Text("User: ${state.user.name}")
-                    Button(onClick = { viewModel.showTemporaryMessage() }) {
-                        Text("Show temp message")
-                    }
-                    Button(onClick = { viewModel.riskyOperation() }) {
-                        Text("Risky operation")
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("✅ Успешно загружен пользователь:")
+                            Text("• Имя: ${state.user.name}")
+                            Text("• Email: ${state.user.email}")
+                        }
                     }
                 }
+
                 is MainUiState.Error -> {
-                    Text("Error: ${state.message}")
-                    Button(onClick = { viewModel.loadUserWithCancel() }) {
-                        Text("Retry")
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("❌ Ошибка:", color = MaterialTheme.colorScheme.error)
+                            Text("${state.message}")
+                        }
                     }
                 }
+
                 is MainUiState.Content -> {
-                    Text("Content screen")
-                    Button(onClick = { viewModel.loadIndependentData() }) {
-                        Text("Load independent data")
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("📄 Состояние Content:")
+
+                            if (state.users.isNotEmpty()) {
+                                Text("• Пользователи из БД: ${state.users.size}")
+                            }
+
+                            if (state.searchResults.isNotEmpty()) {
+                                Text("• Результаты поиска: ${state.searchResults.size}")
+                                state.searchResults.forEach { user ->
+                                    Text("  - ${user.name} (${user.email})")
+                                }
+                            }
+
+                            if (state.settings != null) {
+                                Text("• Настройки: тема=${state.settings.isDarkMode}, язык=${state.settings.language}")
+                            }
+
+                            if (state.users.isEmpty() && state.searchResults.isEmpty() && state.settings == null) {
+                                Text("(пусто)")
+                            }
+                        }
                     }
                 }
             }

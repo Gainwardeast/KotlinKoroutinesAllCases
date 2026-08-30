@@ -8,7 +8,7 @@ import com.example.kotlinkoroutinesallcases.data.User
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface UserDao {
+interface   UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(user: User)
 
