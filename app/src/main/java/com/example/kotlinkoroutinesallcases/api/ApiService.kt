@@ -13,7 +13,7 @@ interface ApiService {
 class ApiServiceMock : ApiService {
     override suspend fun fetchUser(id: Int): User {
         delay(1000)
-        if (id == 0) throw IOException("User not found")
+        if (id <= 0) throw IOException("User not found (id <= 0)")  // ✅ Падает при id <= 0
         return User(id, "John Doe", "john@example.com")
     }
 

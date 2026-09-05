@@ -24,6 +24,13 @@ class UserRepository(
         }
     }
 
+    // UserRepository.kt
+    suspend fun insertUsers(users: List<User>) {
+        withContext(Dispatchers.IO) {
+            users.forEach { dao.insert(it) }
+        }
+    }
+
     suspend fun getUser(id: Int): User {
         cachedUser?.let {
             if (it.id == id) return it
@@ -37,16 +44,19 @@ class UserRepository(
         }
     }
 
-    fun getUsersFlow(): Flow<List<User>> = flow {
-        emitAll(dao.getAllUsers())
-    }.catch { e ->
-        emit(emptyList())
-    }
+    fun getUsersFlow(): Flow<List<User>> = dao.getAllUsers()
+        .catch { emit(emptyList()) }
 
     suspend fun searchUsers(query: String): List<User> {
         return withContext(Dispatchers.IO) {
             // Эмуляция поиска
             listOf(User(1, "Found: $query", "found@example.com"))
+        }
+    }
+
+    suspend fun getCount(): Int {
+        return withContext(Dispatchers.IO) {
+            dao.getCount()
         }
     }
 }
